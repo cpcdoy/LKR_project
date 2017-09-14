@@ -134,4 +134,44 @@ is_continuous(SubLen, SubIdx, SuffIdx, Sub, Suff) :-
     NewSuffIdx is SuffIdx + SubLen,
     is_continuous(SubLen, SubIdx, NewSuffIdx, Sub, NewSuff).
 
-%compare_all_suffixes([c,c,o,w,c,o,w,w], Cnt, R).
+iteration(L, R) :-
+    compare_all_suffixes(L, Cnt, RepeatedSq),
+    cut_string(L, [], Cnt, RepeatedSq, Rest, R).
+
+cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
+    prefix(RepeatedSq, L),
+    Acc == [],
+    length(RepeatedSq, Len),
+    LenToCut is Len * Cnt,
+    drop(LenToCut, L, Tmp),
+    append([Cnt, "*", "("|RepeatedSq], [")", "+"|Tmp], Res),
+    R = Res,
+    !.
+cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
+    prefix(RepeatedSq, L),
+    Rest = Acc,
+    length(RepeatedSq, Len),
+    LenToCut is Len * Cnt,
+    length(L, ExactLen),
+    LenToCut == ExactLen,
+    append(Rest, ["+", Cnt , "*", "("| RepeatedSq], Tmp),
+    append(Tmp, [")"], Rtmp),
+    R = Rtmp,
+    !.
+cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
+    prefix(RepeatedSq, L),
+    Rest = Acc,
+    length(RepeatedSq, Len),
+    LenToCut is Len * Cnt,
+    drop(LenToCut, L, Tmp),
+    append(Rest, ["+", Cnt , "*", "("| RepeatedSq], LeftPart),
+    append(LeftPart, [")"], Rtmp),
+    append(Rtmp, ["+"|Tmp], Res),
+    R = Res,
+    !.
+cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
+    take(1, L, Elt),
+    append(Elt, Acc, NewAcc),
+	drop(1, L, DroppedL),
+    cut_string(DroppedL, NewAcc, Cnt, RepeatedSq, Rest, R).
+%iteration([a,a,a,a,a,y,o,y,o,a], R).
