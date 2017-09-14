@@ -28,23 +28,69 @@ get_suffix_array_hat(N, L, [Elt|R]) :-
     I is N - 1,
     get_suffix_array_hat(I, L, R).
 
-compare_suffix(Sub, L, R) :-
-    compare_suffix_hat(0, 0, Sub, L, R).
-compare_suffix_hat(N, Cnt, _, L, R) :-
+% Pass L as suffix array
+compare_all_suffixes(L, Cnt, R) :-
+    get_suffix_array(L, SuffArray),
+    compare_all_suffixes_hat(0, SuffArray, 0, [], Cnt, R).
+    
+compare_all_suffixes_hat(N, L, Cnt, LongestSuff, Hcnt, R) :-
+    length(L, Size),
+    I is Size - N,
+    I == 0,
+    Hcnt = Cnt,
+    R = LongestSuff,
+    !.
+
+compare_all_suffixes_hat(N, L, Cnt, _, Hcnt, R) :-
+    nth0(N , L, NewSuff),
+    compare_suffix(NewSuff, N, L, Nb),
+    Nb > Cnt,
+    I is N + 1,
+    compare_all_suffixes_hat(I, L, Nb, NewSuff, Hcnt, R).
+compare_all_suffixes_hat(N, L, Cnt, LongestSuff, Hcnt, R) :-
+    I is N + 1,
+    compare_all_suffixes_hat(I, L, Cnt, LongestSuff, Hcnt, R).
+
+compare_suffix(Sub, SubIdx, L, R) :-
+    compare_suffix_hat(0, 0, Sub, SubIdx, L, R).
+compare_suffix_hat(N, Cnt, _, _, L, R) :-
     length(L, Size),
     Size == N,
     R = Cnt,
     !.
-compare_suffix_hat(N, Cnt, Sub, L, R) :-
+compare_suffix_hat(N, Cnt, Sub, SubIdx, L, R) :-
     nth0(N, L, Suff),
     prefix(Sub, Suff),
+    length(Sub, SubLen),
+    length(Suff, SuffLen),
+    Idx is SubIdx - N,
+    Dist is SuffLen - SubLen,
+    Idx == Dist,
+    is_continuous(SubLen, SubIdx, N, Sub, Suff),
     I is N + 1,
     Incr is Cnt + 1,
-    compare_suffix_hat(I, Incr, Sub, L, R).
-compare_suffix_hat(N, Cnt, Sub, L, R) :-
+    compare_suffix_hat(I, Incr, Sub, SubIdx, L, R).
+compare_suffix_hat(N, Cnt, Sub, SubIdx, L, R) :-
     I is N + 1,
-    compare_suffix_hat(I, Cnt, Sub, L, R).
+    compare_suffix_hat(I, Cnt, Sub, SubIdx, L, R).
 
-%Cmd Line
-trace, get_suffix_array([a, a, b, x, c, a, b, c, c], R),
-compare_suffix([a,b,c], R, Cnt).
+take(0, _, []).
+take(N, [H|T], [H|R]) :-
+    N > 0,
+    M is N - 1,
+    take(M, T, R).
+
+drop(0, L, L).
+drop(N, [H|T], R) :-
+    N > 0,
+    M is N - 1,
+    drop(M, T, R).
+
+is_continuous(_, SubIdx, SuffIdx, _, _) :-
+    SubIdx == SuffIdx,
+    !.
+is_continuous(SubLen, SubIdx, SuffIdx, Sub, Suff) :-
+    drop(SubLen, Suff, NewSuff),
+    prefix(Sub, NewSuff),
+    NewSuffIdx is SuffIdx + SubLen,
+    is_continuous(SubLen, SubIdx, NewSuffIdx, Sub, NewSuff).
