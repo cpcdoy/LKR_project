@@ -49,9 +49,15 @@ compare_suffix_hat(N, Cnt, Sub, L, R) :-
     I is N + 1,
     compare_suffix_hat(I, Cnt, Sub, L, R).
 
-prefix(X, L) :- append(X, _, L).
-suffix(X, L) :- append(_, X, L).
-sublist(X, L) :- suffix(S, L), prefix(X, S).
+prefix(X, L) :-
+    append(X, _, L).
+suffix(X, L) :-
+    append(_, X, L).
+sublist(L, X) :-
+    suffix(S, L),
+    prefix(X, S),
+    length(X, R),
+    R > 0.
 
 find_elem_in_list(X, [X|_], X).
 find_elem_in_list(X, [_|L], _) :-
@@ -65,10 +71,32 @@ match_suffix_prefix([X|_], L2, X) :-
 match_suffix_prefix([_|L1], L2, X) :-
     match_suffix_prefix(L1, L2, X).
 
-get_symmetry(L, X) :-
-    findall(Len-Sub, (sublist(Sub, L), length(Sub, Len)), S),
-    keysort(S, Sorted),
-  	member(_-Sub, Sorted),
+%
+label_start(Max, _, Max, _, Off, Off).
+label_start(Max, _, Max, _, Off, _) :-
+    label_start(Max, _, Max, _, Off, Off).
+
+label_start(Max, Len, G, I, Off, R) :-
+    G < Max,
+    G1 is G + 1,
+    I1 is I + 1,
+    I1 == Len,
+    Off1 is Off + 1,
+    Len1 is Len - 1,
+    label_start(Max, Len1, G1, 0, Off1, R).
+
+label_start(Max, Len, G, I, Off, R) :-
+    G < Max,
+    I1 is I + 1,
+    G1 is G + 1,
+    label_start(Max, Len, G1, I1, Off, R).
+
+get_symmetry(L, S) :-
+    findall(X, get_symmetry_(L, X), S).
+
+get_symmetry_(L, X) :-
+    findall(Sub, sublist(Sub, L), S),
+  	member(Sub, S),
     get_symmetry_lists([Sub], X).
 
 get_symmetry_lists([L|_], X) :-
@@ -84,7 +112,4 @@ get_symmetry_list(L, X) :-
     match_suffix_prefix(R1, R2, X),
     length(X, R),
     R > 2,
-    not((R mod 2) is 0),
-    write(R mod 2).
-
-%cmd trace, get_symmetry([a, c, b, c, a, b, a, c, d, s, s, s, s, s, s], S).
+    not(0 is (R mod 2)).
