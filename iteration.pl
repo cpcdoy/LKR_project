@@ -41,14 +41,38 @@ compare_all_suffixes_hat(N, L, Cnt, LongestSuff, Hcnt, R) :-
     R = LongestSuff,
     !.
 
-compare_all_suffixes_hat(N, L, Cnt, _, Hcnt, R) :-
+compare_all_suffixes_hat(N, L, Cnt, StoredSuff, Hcnt, R) :-
     nth0(N , L, NewSuff),
     nth0(N , L, NewSuffTmp),
-    compare_suffix(NewSuff, NewSuffTmp, N, 0, L, Nb, SuffRes),
-    Nb > Cnt,
+    compare_suffix(NewSuff, NewSuffTmp, N, 0, L, Nb, CurSuff),
+    compare_repeated_suffixes(StoredSuff, CurSuff, Nb, Cnt, CntRes, SuffRes),
     I is N + 1,
-    compare_all_suffixes_hat(I, L, Nb, SuffRes, Hcnt, R).
+    compare_all_suffixes_hat(I, L, CntRes, SuffRes, Hcnt, R).
 
+compare_repeated_suffixes(_, CurSuff, Nb, Cnt, CntRes, R) :-
+    Nb > Cnt,
+   	R = CurSuff,
+    CntRes = Nb,
+    !.
+compare_repeated_suffixes(StoredSuff, _, Nb, Cnt, CntRes, R) :-
+    Nb < Cnt,
+   	R = StoredSuff,
+    CntRes = Cnt,
+    !.
+compare_repeated_suffixes(StoredSuff, CurSuff, Nb, Cnt, CntRes, R) :-
+    Nb == Cnt,
+    length(CurSuff, CurSuffLen),
+    length(StoredSuff, StoredSuffLen),
+    CurSuffLen > StoredSuffLen,
+    R = CurSuff,
+    CntRes = Nb,
+    !.
+compare_repeated_suffixes(StoredSuff, _, Nb, Cnt, CntRes, R) :-
+    Nb == Cnt,
+    R = StoredSuff,
+    CntRes = Nb,
+    !.
+    
 compare_all_suffixes_hat(N, L, Cnt, LongestSuff, Hcnt, R) :-
     I is N + 1,
     compare_all_suffixes_hat(I, L, Cnt, LongestSuff, Hcnt, R).
@@ -65,6 +89,7 @@ compare_suffix(_, SubTmp, SubIdx, Cnt, L, Hcnt, R) :-
     NewCnt > Cnt,
     append(NewSub, [_], SubTmp),
     compare_suffix(SubTmp, NewSub, SubIdx, NewCnt, L, Hcnt, R).
+
 compare_suffix(Sub, SubTmp, SubIdx, Cnt, L, Hcnt, R) :-
     append(NewSub, [_], SubTmp),
     compare_suffix(Sub, NewSub, SubIdx, Cnt, L, Hcnt, R).
