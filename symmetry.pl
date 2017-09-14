@@ -53,7 +53,7 @@ prefix(X, L) :-
     append(X, _, L).
 suffix(X, L) :-
     append(_, X, L).
-sublist(L, X) :-
+sublist(X, L) :-
     suffix(S, L),
     prefix(X, S),
     length(X, R),
@@ -90,6 +90,22 @@ label_start(Max, Len, G, I, Off, R) :-
     I1 is I + 1,
     G1 is G + 1,
     label_start(Max, Len, G1, I1, Off, R).
+
+:- dynamic a/0. 
+get_all_start_labels(L, LenS, LenL, R, S) :-
+   not(a),
+   assert(a),
+   R = [],
+   get_all_start_labels(L, LenS, LenL, R, S).
+get_all_start_labels([], _, _, R, R) :-
+   retract(a),
+   !.
+get_all_start_labels([], _, _, R, _) :-
+    get_all_start_labels(_, _, _, R, R).
+get_all_start_labels([_|L], I, LenL, R, S) :-
+    I1 is I + 1,
+    label_start(I1, LenL, 0, 0, 0, Label),
+    get_all_start_labels(L, I1, LenL, [Label|R], S).
 
 get_symmetry(L, S) :-
     findall(X, get_symmetry_(L, X), S).
