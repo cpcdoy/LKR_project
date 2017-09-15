@@ -107,8 +107,83 @@ get_all_start_labels([_|L], I, LenL, R, S) :-
     label_start(I1, LenL, 0, 0, 0, Label),
     get_all_start_labels(L, I1, LenL, [Label|R], S).
 
-get_symmetry(L, S) :-
-    findall(X, get_symmetry_(L, X), S).
+take(0, _, []).
+take(N, [H|T], [H|R]) :-
+    N > 0,
+    M is N - 1,
+    take(M, T, R).
+
+drop(0, L, L).
+drop(N, [_|T], R) :-
+    N > 0,
+    M is N - 1,
+    drop(M, T, R).
+
+cut_string(L, Acc, RepeatedSq, Rest, R) :-
+    prefix(RepeatedSq, L),
+    Acc == [],
+    length(RepeatedSq, Len),
+    LenToCut is Len,
+    drop(LenToCut, L, Tmp),
+    length(Tmp, LenTmp),
+    LenTmp \== 0,
+    append([ "S", "("|RepeatedSq], [")", "+"|Tmp], Res),
+    R = Res,
+    !.
+cut_string(L, Acc, RepeatedSq, Rest, R) :-
+    prefix(RepeatedSq, L),
+    Acc == [],
+    length(RepeatedSq, Len),
+    LenToCut is Len,
+    drop(LenToCut, L, Tmp),
+    append([ "S", "("|RepeatedSq], [")"], Res),
+    R = Res,
+    !.
+cut_string(L, Acc, RepeatedSq, Rest, R) :-
+    prefix(RepeatedSq, L),
+    Rest = Acc,
+    length(RepeatedSq, Len),
+    LenToCut is Len,
+    length(L, ExactLen),
+    LenToCut == ExactLen,
+    append(Rest, ["+" , "S", "("| RepeatedSq], Tmp),
+    append(Tmp, [")"], Rtmp),
+    R = Rtmp,
+    !.
+cut_string(L, Acc, RepeatedSq, Rest, R) :-
+    prefix(RepeatedSq, L),
+    Rest = Acc,
+    length(RepeatedSq, Len),
+    LenToCut is Len,
+    drop(LenToCut, L, Tmp),
+    append(Rest, ["+" , "S", "("| RepeatedSq], LeftPart),
+    append(LeftPart, [")"], Rtmp),
+    append(Rtmp, ["+"|Tmp], Res),
+    R = Res,
+    !.
+cut_string(L, Acc, RepeatedSq, Rest, R) :-
+    take(1, L, Elt),
+    append(Elt, Acc, NewAcc),
+	drop(1, L, DroppedL),
+    cut_string(DroppedL, NewAcc, RepeatedSq, Rest, R).
+
+longest([L], L) :-
+   !.
+longest([H|T], H) :- 
+   length(H, N),
+   longest(T, X),
+   length(X, M),
+   N > M,
+   !.
+longest([_|T], X) :-
+   longest(T, X),
+   !.
+
+get_symmetry(L, R) :-
+    %get_symmetry_(L, S),
+    findall(X, get_symmetry_(L, X), S1),
+    longest(S1, S),
+    cut_string(L, [], S, _, R).
 
 get_symmetry_(L, X) :-
     findall(Sub, sublist(Sub, L), S),
