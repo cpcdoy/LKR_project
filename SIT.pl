@@ -212,8 +212,17 @@ is_continuous(SubLen, SubIdx, SuffIdx, Sub, Suff) :-
 iteration(L, R) :-
     compare_all_suffixes(L, Cnt, RepeatedSq),
     cut_string(L, [], Cnt, RepeatedSq, Rest, R).
-
-cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
+cut_string(L, Acc, Cnt, RepeatedSq, _, R) :-
+    prefix(RepeatedSq, L),
+    Acc == [],
+    length(RepeatedSq, Len),
+    LenToCut is Len * Cnt,
+    length(L, Size),
+    LenToCut == Size,
+    append([Cnt, "*", "("|RepeatedSq], [")"|[]], Res),
+    R = Res,
+    !.
+cut_string(L, Acc, Cnt, RepeatedSq, _, R) :-
     prefix(RepeatedSq, L),
     Acc == [],
     length(RepeatedSq, Len),
@@ -251,7 +260,7 @@ cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
     cut_string(DroppedL, NewAcc, Cnt, RepeatedSq, Rest, R).
 
 % symmetry
-cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
+cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, _, R) :-
     prefix(RepeatedSq, L),
     Acc == [],
     length(RepeatedSq, Len),
@@ -264,7 +273,7 @@ cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     append([ "S", "[", "("|CP], [")", "]" , "+"|Tmp], Res),
     R = Res,
     !.
-cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
+cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, _, R) :-
     prefix(RepeatedSq, L),
     Acc == [],
     length(RepeatedSq, Len),
@@ -356,3 +365,20 @@ get_symmetry_list(L, X) :-
     length(X, R),
     R > 2,
     not(0 is (R mod 2)).
+    
+sit(L, Tmp, R) :-
+    length(L, Size),
+    Size == 0,
+    iteration(Tmp, R),
+    !.
+sit([X|L], Tmp, R) :-
+    is_alpha(X),
+    sit(L, [X|Tmp], R).
+sit([X|L], Tmp, R) :-
+    is_alnum(X),
+    sit(L, [X|Tmp], R).
+sit([X|L], Tmp, R) :-
+    X == "+".
+sit(_, _, _) :-
+    !,
+    fail.
