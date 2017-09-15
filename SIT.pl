@@ -320,6 +320,7 @@ cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
 	drop(1, L, DroppedL),
     cut_string_sym(DroppedL, NewAcc, RepeatedSq, Center, Pattern, Rest, R).
 
+longest([], _).
 longest([L], L) :-
    !.
 longest([H|T], H) :-
@@ -337,21 +338,34 @@ sublist_index(L, M, N, S) :-
 sublist_nth0(L, M, N, S) :-
     findall(E, (between(M, N, I), nth0(I, L, E)), S).
 
-get_symmetry_pattern(L, Center, Pattern) :-
+get_symmetry_pattern(L, In, Center, Pattern, R) :-
+    length(L, LenL),
+   	0 is LenL mod 2,
+    CenterPos is (LenL div 2) - 1,
+    sublist_index(L, 0, CenterPos, Pattern),
+    CenterPos1 is CenterPos + 2,
+    CenterPos2 is CenterPos + 1,
+    sublist_index(L, CenterPos2, CenterPos1, Center),
+    cut_string_sym(In, [], L, Center, Pattern, _, R).
+
+get_symmetry_pattern(L, In, Center, Pattern, R) :-
     length(L, LenL),
    	not(0 is LenL mod 2),
     CenterPos is LenL div 2,
     sublist_index(L, 0, CenterPos, Pattern),
-    CenterPos1 is CenterPos,
-    nth0(CenterPos1, L, Center).
+    nth0(CenterPos, L, Center),
+    cut_string_sym(In, [], L, [Center], Pattern, _, R).
 
 get_symmetry(L, R) :-
     %get_symmetry_(L, S),
     findall(X, get_symmetry_(L, X), S1),
+    length(S1, LenS1),
+    LenS1 > 0,
     longest(S1, S),
-	get_symmetry_pattern(S, Center, Pattern),
-    cut_string_sym(L, [], S, [Center], Pattern, _, R).
+	get_symmetry_pattern(S, L, Center, Pattern, R).
 
+get_symmetry(L, L).
+    
 get_symmetry_(L, X) :-
     findall(Sub, sublist(Sub, L), S),
   	member(Sub, S),
@@ -369,8 +383,7 @@ get_symmetry_list(L, X) :-
     get_prefix_array(L, R2),
     match_suffix_prefix(R1, R2, X),
     length(X, R),
-    R > 2,
-    not(0 is (R mod 2)).
+    R > 2.
     
 sit(N, L, StartExpIdx, Tmp, R) :-
     length(L, Size),
