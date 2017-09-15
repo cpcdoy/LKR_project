@@ -199,7 +199,7 @@ drop(N, [_|T], R) :-
     M is N - 1,
     drop(M, T, R).
 
-% iteration
+% Iteration
 is_continuous(_, SubIdx, SuffIdx, _, _) :-
     SubIdx == SuffIdx,
     !.
@@ -211,7 +211,11 @@ is_continuous(SubLen, SubIdx, SuffIdx, Sub, Suff) :-
 
 iteration(L, R) :-
     compare_all_suffixes(L, Cnt, RepeatedSq),
-    cut_string(L, [], Cnt, RepeatedSq, Rest, R).
+    cut_string(L, [], Cnt, RepeatedSq, _, R).
+cut_string(L, Acc, Cnt, RepeatedSq, _, R) :-
+    L == RepeatedSq,
+    R = L,
+    !.
 cut_string(L, Acc, Cnt, RepeatedSq, _, R) :-
     prefix(RepeatedSq, L),
     Acc == [],
@@ -255,7 +259,7 @@ cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
     !.
 cut_string(L, Acc, Cnt, RepeatedSq, Rest, R) :-
     take(1, L, Elt),
-    append(Elt, Acc, NewAcc),
+    append(Acc, Elt, NewAcc),
 	drop(1, L, DroppedL),
     cut_string(DroppedL, NewAcc, Cnt, RepeatedSq, Rest, R).
 
@@ -312,7 +316,7 @@ cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     !.
 cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     take(1, L, Elt),
-    append(Elt, Acc, NewAcc),
+    append(Acc, Elt, NewAcc),
 	drop(1, L, DroppedL),
     cut_string_sym(DroppedL, NewAcc, RepeatedSq, Center, Pattern, Rest, R).
 
@@ -330,6 +334,8 @@ longest([_|T], X) :-
 
 sublist_index(L, M, N, S) :-
     findall(E, (between(M, N, I), nth1(I, L, E)), S).
+sublist_nth0(L, M, N, S) :-
+    findall(E, (between(M, N, I), nth0(I, L, E)), S).
 
 get_symmetry_pattern(L, Center, Pattern) :-
     length(L, LenL),
@@ -366,19 +372,121 @@ get_symmetry_list(L, X) :-
     R > 2,
     not(0 is (R mod 2)).
     
-sit(L, Tmp, R) :-
+sit(N, L, StartExpIdx, Tmp, R) :-
     length(L, Size),
-    Size == 0,
-    iteration(Tmp, R),
+    StartExpIdx == -1,
+    Size == N,
+    R = Tmp,
     !.
-sit([X|L], Tmp, R) :-
+sit(N, L, StartExpIdx, Tmp, R) :-
+    length(L, Size),
+    Size == N,
+    K is N - 1,
+    sublist_nth0(L, StartExpIdx, K, T),
+    apply_rules(T, Res),
+    append(Tmp, Res, NewTmp),
+    R = NewTmp,
+    !.
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "S",
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
     is_alpha(X),
-    sit(L, [X|Tmp], R).
-sit([X|L], Tmp, R) :-
-    is_alnum(X),
-    sit(L, [X|Tmp], R).
-sit([X|L], Tmp, R) :-
-    X == "+".
-sit(_, _, _) :-
+    StartExpIdx == -1,
+    W is N + 1,
+    sit(W, L, N, Tmp, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    is_alpha(X),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Tmp, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    number(X),
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "*",
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "(",
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "S",
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "[",
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "]",
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == ",",
+    append(Tmp, [X], Res),
+    W is N + 1,
+    sit(W, L, StartExpIdx, Res, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "+",
+    K is N - 1,
+    StartExpIdx \= -1,
+    sublist_nth0(L, StartExpIdx, K, T),
+    apply_rules(T, Res),
+    append(Tmp, Res, NewTmp),
+    append(NewTmp, [X], FinalTmp),
+    W is N + 1,
+    sit(W, L, -1, FinalTmp, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == ")",
+    K is N - 1,
+    StartExpIdx \= -1,
+    sublist_nth0(L, StartExpIdx, K, T),
+    apply_rules(T, Res),
+    append(Tmp, Res, NewTmp),
+    append(NewTmp, [X], FinalTmp),
+    W is N + 1,
+    sit(W, L, -1, FinalTmp, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == ")",
+    append(Tmp, [X], NewTmp),
+    W is N + 1,
+    sit(W, L, StartExpIdx, NewTmp, R).
+sit(N, L, StartExpIdx, Tmp, R) :-
+    nth0(N, L, X),
+    X == "+",
+    append(Tmp, [X], NewTmp),
+    W is N + 1,
+    sit(W, L, StartExpIdx, NewTmp, R).
+sit(_, _, _, _) :-
     !,
     fail.
+
+apply_rules(L, R) :-
+    iteration(L, R).
+%sit(0, [a,a,a,x], -1, [], R).
+%sit(0, [a,a,"+",x,x,"+",o,o], -1, [], R).
+%sit(0, [x, a, "+", 2, "*", "(", a, a, ")", "+", x,a,x, "+", 2, "*", "(", a, a,x, ")" ], -1, [], R).
+%%trace,sit(0, [c, "+", "S", "[", "(", o, ")", ",", "(", o, c, ")", "]"], -1, [], R).
