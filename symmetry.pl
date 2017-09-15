@@ -119,7 +119,7 @@ drop(N, [_|T], R) :-
     M is N - 1,
     drop(M, T, R).
 
-cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
+cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     prefix(RepeatedSq, L),
     Acc == [],
     length(RepeatedSq, Len),
@@ -132,7 +132,7 @@ cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     append([ "S", "[", "("|CP], [")", "]" , "+"|Tmp], Res),
     R = Res,
     !.
-cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
+cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     prefix(RepeatedSq, L),
     Acc == [],
     length(RepeatedSq, Len),
@@ -143,7 +143,7 @@ cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     append([ "S", "[", "("|CP], [")", "]"], Res),
     R = Res,
     !.
-cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
+cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     prefix(RepeatedSq, L),
     Rest = Acc,
     length(RepeatedSq, Len),
@@ -156,7 +156,7 @@ cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     append(Tmp, [")", "]"], Rtmp),
     R = Rtmp,
     !.
-cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
+cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     prefix(RepeatedSq, L),
     Rest = Acc,
     length(RepeatedSq, Len),
@@ -169,11 +169,11 @@ cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     append(Rtmp, ["+"|Tmp], Res),
     R = Res,
     !.
-cut_string(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
+cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     take(1, L, Elt),
     append(Elt, Acc, NewAcc),
 	drop(1, L, DroppedL),
-    cut_string(DroppedL, NewAcc, RepeatedSq, Center, Pattern, Rest, R).
+    cut_string_sym(DroppedL, NewAcc, RepeatedSq, Center, Pattern, Rest, R).
 
 longest([L], L) :-
    !.
@@ -224,6 +224,3 @@ get_symmetry_list(L, X) :-
     length(X, R),
     R > 2,
     not(0 is (R mod 2)).
-
-
-%cmd trace, get_symmetry([a, a, a, b, c, b, a, a, c], R).
