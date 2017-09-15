@@ -329,7 +329,7 @@ cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     !.
 cut_string_sym(L, Acc, RepeatedSq, Center, Pattern, Rest, R) :-
     take(1, L, Elt),
-    append(Elt, Acc, NewAcc),
+    append(Acc, Elt, NewAcc),
 	drop(1, L, DroppedL),
     cut_string_sym(DroppedL, NewAcc, RepeatedSq, Center, Pattern, Rest, R).
 
