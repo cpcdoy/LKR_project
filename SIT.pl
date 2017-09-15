@@ -345,26 +345,41 @@ longest([_|T], X) :-
    longest(T, X),
    !.
 
+sublist_nth0(L, M, M, [S]) :-
+    nth0(M, L, S).
 sublist_index(L, M, N, S) :-
     findall(E, (between(M, N, I), nth1(I, L, E)), S).
 sublist_nth0(L, M, N, S) :-
     findall(E, (between(M, N, I), nth0(I, L, E)), S).
 
-get_symmetry_pattern(L, Center, Pattern) :-
+get_symmetry_pattern(L, In, Center, Pattern, R) :-
+    length(L, LenL),
+   	0 is LenL mod 2,
+    CenterPos is (LenL div 2) - 1,
+    sublist_index(L, 0, CenterPos, Pattern),
+    CenterPos1 is CenterPos + 2,
+    CenterPos2 is CenterPos + 1,
+    sublist_index(L, CenterPos2, CenterPos1, Center),
+    cut_string_sym(In, [], L, Center, Pattern, _, R).
+
+get_symmetry_pattern(L, In, Center, Pattern, R) :-
     length(L, LenL),
    	not(0 is LenL mod 2),
     CenterPos is LenL div 2,
     sublist_index(L, 0, CenterPos, Pattern),
-    CenterPos1 is CenterPos,
-    nth0(CenterPos1, L, Center).
+    nth0(CenterPos, L, Center),
+    cut_string_sym(In, [], L, [Center], Pattern, _, R).
 
 get_symmetry(L, R) :-
     %get_symmetry_(L, S),
     findall(X, get_symmetry_(L, X), S1),
+    length(S1, LenS1),
+    LenS1 > 0,
     longest(S1, S),
-	get_symmetry_pattern(S, Center, Pattern),
-    cut_string_sym(L, [], S, [Center], Pattern, _, R).
+	get_symmetry_pattern(S, L, Center, Pattern, R).
 
+get_symmetry(L, L).
+    
 get_symmetry_(L, X) :-
     findall(Sub, sublist(Sub, L), S),
   	member(Sub, S),
@@ -382,9 +397,7 @@ get_symmetry_list(L, X) :-
     get_prefix_array(L, R2),
     match_suffix_prefix(R1, R2, X),
     length(X, R),
-    R > 2,
-    not(0 is (R mod 2)).
-    
+    R > 2.    
 sit(N, L, StartExpIdx, Tmp, R) :-
     length(L, Size),
     StartExpIdx == -1,
@@ -497,8 +510,39 @@ sit(_, _, _, _) :-
     !,
     fail.
 
+eval(L, R) :-
+    sit(0, L, -1, [], Res),
+    (   L \= Res -> eval(Res, R); R = Res).
+
+count_alpha(N, L, Cnt, R) :-
+    length(L, Size),
+    N == Size,
+    R = Cnt,
+    !.
+count_alpha(N, L, Cnt, R) :-
+    nth0(N, L, Elt),
+    Elt == "S",
+    W is N + 1,
+    count_alpha(W, L, Cnt, R).
+count_alpha(N, L, Cnt, R) :-
+    nth0(N, L, Elt),
+    is_alpha(Elt),
+    C is Cnt + 1,
+    W is N + 1,
+    count_alpha(W, L, C, R).
+count_alpha(N, L, Cnt, R) :-
+    W is N + 1,
+    count_alpha(W, L, Cnt, R).
 apply_rules(L, R) :-
-    iteration(L, R).
+    iteration(L, ItRes),
+    get_symmetry(L, SyRes),
+    count_alpha(0, ItRes, 0, CntIt),
+    count_alpha(0, SyRes, 0, CntSy),
+    (   CntIt >= CntSy -> R = SyRes;
+    CntSy > CntIt -> R = ItRes),
+    !.
+
+
 %sit(0, [a,a,a,x], -1, [], R).
 %sit(0, [a,a,"+",x,x,"+",o,o], -1, [], R).
 %sit(0, [x, a, "+", 2, "*", "(", a, a, ")", "+", x,a,x, "+", 2, "*", "(", a, a,x, ")" ], -1, [], R).
