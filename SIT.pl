@@ -335,7 +335,7 @@ get_symmetry(L, R) :-
     findall(X, get_symmetry_(L, X), S1),
     longest(S1, S),
 	get_symmetry_pattern(S, Center, Pattern),
-    cut_string(L, [], S, [Center], Pattern, _, R).
+    cut_string_sym(L, [], S, [Center], Pattern, _, R).
 
 get_symmetry_(L, X) :-
     findall(Sub, sublist(Sub, L), S),
